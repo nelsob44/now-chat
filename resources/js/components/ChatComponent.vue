@@ -7,11 +7,12 @@
                         Now Chat
                     </div>
                         <ul class="list-group">
-                            <a href="" @click.prevent="openChat(friend)" v-for="friend in friends" :key="friend.id">
-                                <li class="list-group-item">
-                                {{friend.name}}
-                                </li>
-                            </a>
+                            <li class="list-group-item" @click.prevent="openChat(friend)" 
+                            v-for="friend in friends" :key="friend.id">
+                                <a href="" >{{friend.name}}</a>
+                                <i class="fa fa-circle float-right text-success" aria-hidden="true"
+                                v-if="friend.online"></i>
+                            </li>
                         </ul>
                 </div>
             </div>
@@ -42,9 +43,9 @@
             },
             openChat(friend){
                 if(friend.session){
-                    this.friends.forEach(friend => {
-                    friend.session.open = false
-                });
+                    this.friends.forEach(
+                    friend => (friend.session ? (friend.session.open = false) : '')
+                );
                 friend.session.open = true;
                 }else {
                     this.createSession(friend);                    
@@ -59,6 +60,28 @@
         },
         created(){
             this.getFriends();
+
+            Echo.channel("Chat").listen("SessionEvent", e => {
+                let friend = this.friends.find(friend => friend.id == e.session_by);
+                friend.session = e.session;
+            });
+
+            Echo.join(`Chat`)
+            .here((users) => {
+                this.friends.forEach(friend => {
+                    users.forEach(user => {
+                        if(user.id == friend.id) {
+                            friend.online = true;
+                        }
+                    })
+                })
+            })
+            .joining((user) => {
+                this.friends.forEach(friend => user.id == friend.id ? friend.online = true: '')
+            })
+            .leaving((user) => {
+                this.friends.forEach(friend => user.id == friend.id ? friend.online = true: '')
+            });
         },
         components:{MessageComponent},
         

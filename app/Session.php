@@ -3,15 +3,15 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Chat;
+use App\Message;
 
 class Session extends Model
 {
-    protected $fillable = [
-        'user1_id', 'user2_id'
-    ];
+    protected $guarded = [];
     public function chats()
     {
-        return $this->hasManyThrough(Chat::class,Message::class);
+        return $this->hasManyThrough(Chat::class, Message::class);
     }
 
     public function messages()
