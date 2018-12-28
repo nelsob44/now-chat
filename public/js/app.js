@@ -57726,6 +57726,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -57744,7 +57749,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             var _this = this;
 
             axios.post('getFriends').then(function (res) {
-                return _this.friends = res.data.data;
+                _this.friends = res.data.data;
+                _this.friends.forEach(function (friend) {
+                    return friend.session ? _this.listenForEverySession(friend) : "";
+                });
             });
         },
         openChat: function openChat(friend) {
@@ -57753,6 +57761,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                     return friend.session ? friend.session.open = false : '';
                 });
                 friend.session.open = true;
+                friend.session.unreadCount = 0;
             } else {
                 this.createSession(friend);
             }
@@ -57760,6 +57769,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         createSession: function createSession(friend) {
             axios.post('session/create', { friend_id: friend.id }).then(function (res) {
                 friend.session = res.data.data, friend.session.open = true;
+            });
+        },
+        listenForEverySession: function listenForEverySession(friend) {
+            Echo.private('Chat.' + friend.session.id).listen("PrivateChatEvent", function (e) {
+                return friend.session.open ? "" : friend.session.unreadCount++;
             });
         }
     },
@@ -57773,6 +57787,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 return friend.id == e.session_by;
             });
             friend.session = e.session;
+            _this2.listenForEverySession(friend);
         });
 
         Echo.join('Chat').here(function (users) {
@@ -58278,6 +58293,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
     props: ['friend'],
@@ -58289,28 +58307,53 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         };
     },
     created: function created() {
+        var _this = this;
+
+        this.read();
         this.getAllMessages();
+
+        Echo.private("Chat." + this.friend.session.id).listen("PrivateChatEvent", function (e) {
+            _this.friend.session.open ? _this.read() : "";
+            _this.chats.push({ message: e.content, type: 1, sent_at: "Just now" });
+        });
+
+        Echo.private("Chat." + this.friend.session.id).listen("MsgReadEvent", function (e) {
+            return _this.chats.forEach(function (chat) {
+                return chat.id == e.chat.id ? chat.read_at = e.chat.read_at : "";
+            });
+        });
     },
 
     methods: {
         send: function send() {
+            var _this2 = this;
+
             if (this.message) {
                 this.pushToChats(this.message);
-                axios.post('send/' + this.friend.session.id, {
+                axios.post("send/" + this.friend.session.id, {
                     content: this.message,
                     to_user: this.friend.id
+                }).then(function (res) {
+                    return _this2.chats[_this2.chats.length - 1].id = res.data;
                 });
                 this.message = null;
             }
         },
+        read: function read() {
+            axios.post("session/" + this.friend.session.id + "/read");
+        },
         pushToChats: function pushToChats(message) {
-            this.chats.push({ message: message });
+            this.chats.push({ message: message, type: 0, read_at: null, sent_at: "Just Now" });
         },
         close: function close() {
             this.$emit('close');
         },
         clear: function clear() {
-            this.chats = [];
+            var _this3 = this;
+
+            axios.post("session/" + this.friend.session.id + "/clear").then(function (res) {
+                return _this3.chats = [];
+            });
         },
         block: function block() {
             this.sessionBlocked = true;
@@ -58319,10 +58362,10 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             this.sessionBlocked = false;
         },
         getAllMessages: function getAllMessages() {
-            var _this = this;
+            var _this4 = this;
 
-            axios.post('session/' + this.friend.session.id + '/chats').then(function (res) {
-                return _this.chats = res.data.data;
+            axios.post("session/" + this.friend.session.id + "/chats").then(function (res) {
+                return _this4.chats = res.data.data;
             });
         }
     }
@@ -58436,14 +58479,24 @@ var render = function() {
         return _c(
           "p",
           {
-            key: chat.message,
+            key: chat.id,
             staticClass: "card-text",
-            class: { "text-right": chat.type == 0 }
+            class: {
+              "text-right": chat.type == 0,
+              "text-success": chat.read_at != null
+            }
           },
           [
             _vm._v(
-              "\r\n                " + _vm._s(chat.message) + "\r\n            "
-            )
+              "\r\n                " +
+                _vm._s(chat.message) +
+                "\r\n                "
+            ),
+            _c("br"),
+            _vm._v(" "),
+            _c("span", { staticStyle: { "font-size": "8px" } }, [
+              _vm._v(_vm._s(chat.read_at))
+            ])
           ]
         )
       })
@@ -58559,7 +58612,19 @@ var render = function() {
                 },
                 [
                   _c("a", { attrs: { href: "" } }, [
-                    _vm._v(_vm._s(friend.name))
+                    _vm._v(
+                      "\n                                    " +
+                        _vm._s(friend.name) +
+                        "\n                                    "
+                    ),
+                    friend.session && friend.session.unreadCount > 0
+                      ? _c("span", { staticClass: "text-danger" }, [
+                          _vm._v(
+                            _vm._s(friend.session.unreadCount) +
+                              "\n                                    "
+                          )
+                        ])
+                      : _vm._e()
                   ]),
                   _vm._v(" "),
                   friend.online

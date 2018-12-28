@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Session;
 use App\Http\Resources\ChatResource;
+use App\Events\PrivateChatEvent;
+use App\Events\MsgReadEvent;
+use Carbon\Carbon;
 
 class ChatController extends Controller
 {
@@ -12,15 +15,35 @@ class ChatController extends Controller
     {
         $message = $session->messages()->create(['content' => $request->content]);
 
-        $message->createForSend($session->id);
+        $chat = $message->createForSend($session->id);
 
         $message->createForReceive($session->id, $request->to_user);
+
+        broadcast(new PrivateChatEvent($message->content, $chat));
         
-        return response($message, 200);
+        return response($chat->id, 200);
     }
 
     public function chats(Session $session)
     {
         return ChatResource::collection($session->chats->where('user_id', auth()->id()));
+    }
+
+    public function read(Session $session)
+    {
+        $chats = $session->chats->where('read_at', null)->where('type', 0)->where
+        ('user_id', '!=', auth()->id());
+
+        foreach ($chats as $chat){
+            $chat->update(['read_at' => Carbon::now()]);
+            broadcast(new MsgReadEvent(new ChatResource($chat),$chat->session_id));
+        }
+    }
+
+    public function clear(Session $session)
+    {
+        $session->deleteChats();
+        $session->chats->count() == 0 ? $session->deleteMessages() : '';
+        return response('cleared', 200);
     }
 }

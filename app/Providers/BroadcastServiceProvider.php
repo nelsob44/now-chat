@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Broadcast;
+use App\Session;
 
 class BroadcastServiceProvider extends ServiceProvider
 {
