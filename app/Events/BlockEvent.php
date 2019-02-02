@@ -10,27 +10,20 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class PrivateChatEvent implements ShouldBroadcast
+class BlockEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $content;
-    public $image;
-    public $stringlength;
-    public $chat;
-
+    public $session_id;
+    public $blocked;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($content, $image, $stringlength, $chat)
+    public function __construct($session_id, $blocked)
     {
-        $this->content = $content;
-        $this->image = $image;
-        
-        $this->stringlength = $stringlength;
-        $this->chat = $chat;
+        $this->session_id = $session_id;
+        $this->blocked = $blocked;
         $this->dontBroadcastToCurrentUser();
     }
 
@@ -41,6 +34,6 @@ class PrivateChatEvent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('Chat.' . $this->chat['session_id']);
+        return new PrivateChannel('Chat.' . $this->session_id);
     }
 }

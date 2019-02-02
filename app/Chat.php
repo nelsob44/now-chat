@@ -16,4 +16,5 @@ class Chat extends Model
     {
         return $this->belongsTo(Message::class);
     }
+    
 }

@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <script>
+        window.auth = {!!auth()->user()!!}
+    </script>
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -22,8 +24,8 @@
 </head>
 <body>
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light navbar-laravel">
-            <div class="container">
+        <nav class="navbar navbar-expand-md navbar-light navbar-laravel container" style="height:50px;">
+            
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
                 </a>
@@ -70,12 +72,11 @@
                         @endguest
                     </ul>
                 </div>
-            </div>
+            
         </nav>
-
         <main class="py-4">
             @yield('content')
-        </main>
+        </main>        
     </div>
 </body>
 </html>

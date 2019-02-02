@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Chat;
+use App\Session;
 
 class Message extends Model
 {
