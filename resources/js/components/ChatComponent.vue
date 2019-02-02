@@ -42,13 +42,6 @@
                         <v-card-media
                         :src="'http://localhost/now-chat/public/images/' + pic" height="auto">
                         </v-card-media>
-
-                        <!-- <v-card-title primary-title>
-                        <div>
-                            <div class="headline">Top western road trips</div>
-                            <span class="grey--text">1,000 miles of wonder</span>
-                        </div>
-                        </v-card-title> -->
                     
                     </v-card>
                 </v-flex>
@@ -81,7 +74,6 @@
                 open: true,
                 friends: [],
                 isSliding: true,
-                // seeCarousel: false,
                 pic: null,
                 singleImage: false,
                 chats: [],
@@ -98,6 +90,7 @@
                 this.singleImage = false;
                 this.isSliding = true;
             },
+            
             getFriends(){
                 axios.post('getFriends').then(res => {
                     this.friends = res.data.data;

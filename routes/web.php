@@ -6,6 +6,7 @@ Route::get('/', function () {
 });
 
 Route::post('/getFriends', 'HomeController@getFriends');
+
 Route::post('session/{session}/uploadimage', 'ChatController@upload');
 
 Route::post('session/create', 'SessionController@create');

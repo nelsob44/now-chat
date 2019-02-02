@@ -32,4 +32,5 @@ class HomeController extends Controller
     {
         return UserResource::collection(User::where('id', '!=', auth()->id())->get());
     }
+    
 }
